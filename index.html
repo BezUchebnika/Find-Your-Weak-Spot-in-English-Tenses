@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Тренажёр: выбери время — BezUchebnika</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #111111;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .global-bar-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #111111;
+    padding: 12px 16px;
+  }
+  .global-bar-track {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    height: 7px;
+    background: #3a3a3a;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .global-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    background-image: linear-gradient(90deg, #85B7EB 0%, #85B7EB 15%, #A8AFC9 40%, #D19A8C 65%, #E8542E 100%);
+    background-size: 480px 100%;
+    background-repeat: no-repeat;
+  }
+  .global-bar-labels {
+    max-width: 480px;
+    margin: 7px auto 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .global-bar-labels .pct { color: #85B7EB; }
+
+  .wrap { max-width: 480px; margin: 0 auto; padding: 8px 16px 60px; }
+
+  .voice { font-style: italic; }
+
+  .level-section { margin-bottom: 8px; }
+  .level-section.hidden { display: none; }
+
+  .level-title {
+    font-size: 24px;
+    font-weight: 500;
+    margin-top: 18px;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .level-sub {
+    font-size: 13.5px;
+    color: #888888;
+    margin-bottom: 22px;
+    line-height: 1.5;
+  }
+  .level-sub .count {
+    color: #111111;
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  .level-dots {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px;
+  }
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    transition: background 0.3s ease, width 0.3s ease;
+  }
+  .dot.done { background: #85B7EB; }
+  .dot.current { background: #111111; width: 16px; border-radius: 3px; }
+
+  .task {
+    padding: 20px 16px;
+    margin-bottom: 12px;
+    background: #fafafa;
+    border-radius: 10px;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: taskIn 0.25s ease forwards;
+  }
+  @keyframes taskIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .task-sentence {
+    font-size: 17px;
+    line-height: 1.55;
+    color: #111111;
+    margin-bottom: 14px;
+    font-weight: 400;
+  }
+  .task-sentence .gap {
+    display: inline-block;
+    min-width: 56px;
+    text-align: center;
+    border-bottom: 2px solid #999999;
+    color: transparent;
+    user-select: none;
+  }
+  .task-sentence .gap.filled-correct {
+    color: #1e7a45;
+    border-bottom-color: #1e7a45;
+    font-weight: 600;
+  }
+  .task-sentence .gap.filled-wrong {
+    color: #b23a3a;
+    border-bottom-color: #b23a3a;
+    font-weight: 600;
+  }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .opt-btn {
+    border: 1.5px solid #d5d5d5;
+    background: #ffffff;
+    padding: 11px 8px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #111111;
+    cursor: pointer;
+    border-radius: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .opt-btn:active { transform: scale(0.98); }
+  .opt-btn.correct {
+    background: #E3F5E9;
+    border-color: #5CB584;
+    color: #1e7a45;
+    font-weight: 600;
+  }
+  .opt-btn.wrong {
+    background: #FBE4E4;
+    border-color: #D64545;
+    color: #b23a3a;
+    font-weight: 600;
+  }
+  .opt-btn.disabled { pointer-events: none; }
+  .opt-btn.dimmed { opacity: 0.4; }
+
+  .hint-btn {
+    background: none;
+    border: none;
+    color: #7a9dbf;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 0;
+    font-family: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .hint-text {
+    font-size: 13px;
+    color: #777777;
+    margin-top: 6px;
+    line-height: 1.5;
+    display: none;
+  }
+  .hint-text.shown { display: block; }
+
+  .explanation {
+    font-size: 13.5px;
+    color: #555555;
+    margin-top: 12px;
+    line-height: 1.55;
+    padding-left: 10px;
+    border-left: 2px solid #85B7EB;
+    display: none;
+  }
+  .explanation.shown {
+    display: block;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* финальный уровень: текст истории отдельно от карточки задания */
+  .story-text {
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 22px 18px;
+    font-size: 16.5px;
+    line-height: 1.75;
+    color: #111111;
+    margin-bottom: 14px;
+  }
+  .story-text .filled-correct { color: #1e7a45; font-weight: 600; }
+  .story-text .filled-wrong { color: #b23a3a; font-weight: 600; }
+  .story-text .filled-wrong-strike {
+    color: #b23a3a;
+    font-weight: 600;
+    text-decoration: line-through;
+    text-decoration-color: #b23a3a;
+    opacity: 0.7;
+  }
+  .story-text .filled-correction {
+    color: #2b6cb0;
+    font-weight: 600;
+  }
+
+  .inline-task {
+    display: block;
+    padding: 20px 16px;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1.5px solid #111111;
+  }
+  .inline-task.answered { opacity: 0.6; transition: opacity 0.3s ease; }
+  .inline-task .options { margin-bottom: 10px; }
+  .inline-task .hint-text { margin-bottom: 10px; }
+
+  .story-blank-placeholder {
+    display: inline-block;
+    min-width: 90px;
+    border-bottom: 2px solid #999999;
+    text-align: center;
+  }
+
+  .level-complete {
+    text-align: center;
+    padding: 40px 20px;
+    background: #111111;
+    margin: 20px -16px 0;
+    opacity: 0;
+    transform: scale(0.96);
+    animation: completeIn 0.4s ease forwards;
+  }
+  @keyframes completeIn {
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .star-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 auto 12px;
+    flex-wrap: wrap;
+    max-width: 340px;
+  }
+  .star-row svg {
+    width: 32px;
+    height: 32px;
+    opacity: 0;
+    transform: scale(0);
+  }
+  .star-row svg.pop {
+    animation: starPop 0.4s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes starPop {
+    0% { opacity: 0; transform: scale(0) rotate(-15deg); }
+    60% { opacity: 1; transform: scale(1.25) rotate(8deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+  .score-caption {
+    font-size: 16px;
+    color: #85B7EB;
+    font-weight: 700;
+    margin-bottom: 30px;
+  }
+
+  .level-progress-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .level-progress-circle {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid #555555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #888888;
+    font-weight: 600;
+  }
+  .level-progress-circle.filled {
+    background: #f0f0f0;
+    border-color: #f0f0f0;
+    color: #111111;
+  }
+  .level-progress-line { width: 10px; height: 1px; background: #444444; }
+  .level-progress-line.filled { background: #e8e8e8; }
+  .level-progress-caption { font-size: 11px; color: #666666; margin-bottom: 28px; }
+  .level-complete-sub {
+    font-size: 13px;
+    color: #ffffff;
+    opacity: 0.65;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .next-level-btn {
+    background: #ffffff;
+    color: #111111;
+    border: none;
+    padding: 13px 26px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .next-level-btn:active { transform: scale(0.98); }
+
+  .cta-placeholder {
+    text-align: center;
+    padding: 50px 20px;
+    background: #111111;
+    margin: 20px -16px 0;
+  }
+  .cta-placeholder p {
+    color: #ffffff;
+    opacity: 0.5;
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  .cta-wrapper {
+    padding-top: 8px;
+  }
+  .final-result-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: #111111;
+    text-align: center;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+
+  .cta-block {
+    padding: 40px 20px 36px;
+    background: #111111;
+    margin: 20px -16px 0;
+    text-align: center;
+  }
+  .cta-stars-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 300px;
+    margin: 0 auto 8px;
+  }
+  .cta-stars-caption {
+    color: #85B7EB;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 28px;
+  }
+  .cta-feedback-card {
+    background: #f4f4f4;
+    border-radius: 0;
+    padding: 18px 16px;
+    margin-bottom: 28px;
+    text-align: left;
+  }
+  .cta-feedback-card p {
+    color: #222222;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .cta-feedback-card p:first-child { margin-bottom: 10px; }
+  .cta-invite-card {
+    padding-top: 4px;
+    text-align: left;
+  }
+  .cta-invite {
+    color: #ffffff;
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin-bottom: 22px;
+  }
+  .cta-btn {
+    display: inline-block;
+    background: #ffffff;
+    color: #111111;
+    text-decoration: none;
+    padding: 14px 30px;
+    font-size: 14.5px;
+    font-weight: 600;
+    margin-bottom: 30px;
+  }
+  .cta-btn:active { transform: scale(0.98); }
+  .cta-bonus {
+    border-top: 1px solid #333333;
+    padding-top: 22px;
+    margin-bottom: 26px;
+  }
+  .cta-bonus-text {
+    color: #ffffff;
+    opacity: 0.7;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 12px;
+    text-align: left;
+  }
+  .cta-code {
+    display: inline-block;
+    background: transparent;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 2px;
+    padding: 10px 22px;
+    border: 1.5px dashed #666666;
+  }
+  .cta-brand {
+    color: #666666;
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
+    font-style: italic;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .cta-brand:active { opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div class="global-bar-wrap">
+  <div class="global-bar-track">
+    <div class="global-bar-fill" id="globalFill"></div>
+  </div>
+  <div class="global-bar-labels">
+    <span id="globalLevelLabel">Уровень 1 из 5</span>
+    <span class="pct" id="globalPct">0%</span>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap"></div>
+
+<script>
+// ===== ОБЩИЕ ДАННЫЕ ПО ВСЕМ 5 УРОВНЯМ =====
+
+const LEVELS = [
+  {
+    title: "Разминка",
+    subtitle: "To be, Past Simple, Present Simple",
+    resultTopic: "to be, Past Simple и Present Simple",
+    ctaTopic: "to be, Past Simple и Present Simple",
+    ctaTopicNom: "to be, Past Simple и Present Simple",
+    nextTopic: "где прячется путаница между Present Simple и Present Continuous",
+    tasks: [
+      {
+        sentence: ["This", " a perfect time to change jobs. The market has finally picked up."],
+        options: ["am", "is", "are", "was"],
+        correct: "is",
+        hint: "Подлежащее здесь — «this»: одна вещь или несколько? И время какое, настоящее или прошлое?",
+        explanation: "Правильный ответ — <b>is</b>. This — единственное число, настоящее время."
+      },
+      {
+        sentence: ["My children", " old enough now to hear this directly."],
+        options: ["were", "am", "are", "was"],
+        correct: "are",
+        hint: "Тут два момента сразу: сколько детей подразумевает «children», и о каком времени речь — сейчас или раньше?",
+        explanation: "Правильный ответ — <b>are</b>. Children — множественное число, речь о настоящем (now)."
+      },
+      {
+        sentence: ["She", " to three different cities before she finally settled here."],
+        options: ["move", "is moving", "moved", "moving"],
+        correct: "moved",
+        hint: "Речь просто о факте в прошлом — три переезда были и прошли, это уже закрытая глава.",
+        explanation: "Правильный ответ — <b>moved</b>. Простой факт из прошлого, без связи с сегодняшним днём (Past Simple)."
+      },
+      {
+        sentence: ["We", " not ready for that conversation back then, even though we thought we were."],
+        options: ["was", "were", "are", "is"],
+        correct: "were",
+        hint: "«We» — это один человек или несколько? А «back then» о каком времени говорит?",
+        explanation: "Правильный ответ — <b>were</b>. We — множественное число, back then — прошлое."
+      },
+      {
+        sentence: ["Every morning she", " for a walk before anyone else wakes up."],
+        options: ["go", "goes", "going", "went"],
+        correct: "goes",
+        hint: "«Every morning» говорит о повторяющемся действии. Какое окончание нужно глаголу с «she» в настоящем времени?",
+        explanation: "Правильный ответ — <b>goes</b>. Регулярное действие (every morning) плюс she → добавляем -s."
+      }
+    ]
+  },
+  {
+    title: "Момент или привычка?",
+    subtitle: "Present Simple, Present Continuous",
+    resultTopic: "разницей между моментом и привычкой",
+    ctaTopic: "разницу между Present Simple и Present Continuous",
+    ctaTopicNom: "разница между Present Simple и Present Continuous",
+    nextTopic: "самая частая путаница: Past Simple и Present Perfect",
+    tasks: [
+      {
+        sentence: ["She usually", " from home on Mondays, but this week she's back in the office."],
+        options: ["works", "work", "is working", "working"],
+        correct: "works",
+        hint: "«Usually» — про то, что происходит регулярно, или про то, что прямо сейчас?",
+        explanation: "Правильный ответ — <b>works</b>. Present Simple — регулярное действие."
+      },
+      {
+        sentence: ["Look, she", " me a message right now. I can see the dots."],
+        options: ["type", "types", "is typing", "typing"],
+        correct: "is typing",
+        hint: "«Right now» — сигнал, что действие происходит в этот самый момент.",
+        explanation: "Правильный ответ — <b>is typing</b>. Present Continuous — происходит прямо сейчас."
+      },
+      {
+        sentence: ["I", " what you mean, but I still don't agree with the decision."],
+        options: ["am understanding", "understand", "understanding", "understands"],
+        correct: "understand",
+        hint: "Understand — это состояние в голове, а не действие, которое можно «делать по шагам».",
+        explanation: "Правильный ответ — <b>understand</b>. У глаголов состояния нет формы -ing."
+      },
+      {
+        sentence: ["These days, more people", " their parents into the city instead of the other way around."],
+        options: ["is moving", "move", "moves", "are moving"],
+        correct: "move",
+        hint: "Это не про одну семью в этот момент, а про общую картину среди многих людей.",
+        explanation: "Правильный ответ — <b>move</b>. Present Simple — регулярное действие, даже когда речь про «these days»."
+      },
+      {
+        sentence: ["Wait, why", " you leaving so early? It's not even six yet."],
+        options: ["do", "are", "did", "were"],
+        correct: "are",
+        hint: "Собеседник видит происходящее прямо сейчас и удивлён этим.",
+        explanation: "Правильный ответ — <b>are</b> (are leaving). Present Continuous — происходит прямо сейчас."
+      }
+    ]
+  },
+  {
+    title: "Было — или уже случилось?",
+    subtitle: "Past Simple, Present Perfect",
+    resultTopic: "Past Simple и Present Perfect",
+    ctaTopic: "разницу между Past Simple и Present Perfect",
+    ctaTopicNom: "разница между Past Simple и Present Perfect",
+    nextTopic: "going to против Present Continuous в разговоре о будущем",
+    tasks: [
+      {
+        sentence: ["I", " jobs three years ago, right after my youngest left for university."],
+        options: ["changed", "have changed", "change", "am changing"],
+        correct: "changed",
+        hint: "Есть точная дата (three years ago) — это одна конкретная ситуация в прошлом.",
+        explanation: "Правильный ответ — <b>changed</b>. Past Simple — простой факт в прошлом, было и прошло."
+      },
+      {
+        sentence: ["I", " my career twice already, and I'm not ruling out a third time."],
+        options: ["changed", "have changed", "change", "am changing"],
+        correct: "have changed",
+        hint: "Нет точной даты, зато есть «already» — важен сам факт к сегодняшнему дню, а не когда именно это было.",
+        explanation: "Правильный ответ — <b>have changed</b>. Present Perfect — результат прошедшего действия важен сейчас."
+      },
+      {
+        sentence: ["I", " this restless before, not even during the divorce."],
+        options: ["wasn't", "have never been", "was never", "am never being"],
+        correct: "have never been",
+        hint: "Это опыт «за всю жизнь до сих пор» — как будто сравниваешь всё прошлое с тем, что чувствуешь сейчас.",
+        explanation: "Правильный ответ — <b>have never been</b>. Present Perfect — результат прошедшего действия важен сейчас."
+      },
+      {
+        sentence: ["This week alone, we", " the conversation twice, and still haven't finished it."],
+        options: ["postponed", "have postponed", "postpone", "are postponing"],
+        correct: "have postponed",
+        hint: "«This week» ещё не закончилась — значит, это не закрытая история.",
+        explanation: "Правильный ответ — <b>have postponed</b>. Present Perfect — важен результат к текущему моменту, период (неделя) ещё не закончился."
+      },
+      {
+        sentence: ["Have you talked to her about it yet? Yes, I", " her yesterday, actually."],
+        options: ["have called", "called", "call", "am calling"],
+        correct: "called",
+        hint: "Первый вопрос — про факт вообще, а ответ уточняет точный день. Это меняет форму.",
+        explanation: "Правильный ответ — <b>called</b>. Past Simple — простой факт с указанием точной даты (yesterday)."
+      }
+    ]
+  },
+  {
+    title: "Планы на будущее",
+    subtitle: "Present Continuous, going to",
+    resultTopic: "планами на будущее",
+    ctaTopic: "разницу между Present Continuous и going to",
+    ctaTopicNom: "разница между Present Continuous и going to",
+    nextTopic: "финальное испытание: все времена сразу, в живой переписке",
+    tasks: [
+      {
+        sentence: ["Look at those clouds. It", " any minute now."],
+        options: ["rains", "is going to rain", "is raining", "will rain"],
+        correct: "is going to rain",
+        hint: "Тучи уже видны прямо сейчас — предсказание строится на том, что заметно в моменте.",
+        explanation: "Правильный ответ — <b>is going to rain</b>. Видимый признак сейчас указывает на то, что будет дальше."
+      },
+      {
+        sentence: ["We", " dinner with them on Saturday. It's already in the calendar."],
+        options: ["have", "are having", "will have", "are going to have"],
+        correct: "are having",
+        hint: "Дело уже согласовано и стоит в календаре — это не просто идея, а договорённость с конкретным временем.",
+        explanation: "Правильный ответ — <b>are having</b>. Present Continuous используется для уже согласованных планов с конкретным временем."
+      },
+      {
+        sentence: ["Oh wait, that's my phone ringing. I", " get it, hold on a second."],
+        options: ["am going to", "will", "am", "do"],
+        correct: "will",
+        hint: "Решение отвечать на звонок рождается прямо в эту секунду, когда телефон уже зазвонил.",
+        explanation: "Правильный ответ — <b>will</b>. Это отдельное, третье время для спонтанных решений в момент речи — не входит в нашу пару, но полезно увидеть контраст."
+      },
+      {
+        sentence: ["Every autumn, the whole family", " at my sister's place for the holidays."],
+        options: ["is gathering", "gathers", "gathered", "is going to gather"],
+        correct: "gathers",
+        hint: "Это повторяется из года в год — традиция, а не разовый план на конкретную дату.",
+        explanation: "Правильный ответ — <b>gathers</b> (Present Simple). Регулярное действие, не путать с разовым планом на будущее."
+      },
+      {
+        sentence: ["We haven't decided anything about the move yet. We", " think it over for a while longer."],
+        options: ["are going to", "will", "do", "are"],
+        correct: "are going to",
+        hint: "Это общее намерение на будущее — не согласованная дата и не спонтанное решение прямо сейчас.",
+        explanation: "Правильный ответ — <b>are going to</b>. Общее намерение или план без жёсткой даты."
+      }
+    ]
+  },
+  {
+    title: "Финальный уровень",
+    subtitle: "Все времена сразу",
+    isFinal: true,
+    ctaTopic: "все времена сразу, в связном тексте",
+    ctaTopicNom: "работа со всеми временами сразу, в связном тексте",
+    tasks: [
+      {
+        before: "Hey! Sorry I",
+        after: " so quiet lately, it's been a wild week.",
+        options: ["am", "have been", "was", "were"],
+        correct: "have been",
+        hint: "Это состояние длится до сих пор, без точной даты, когда оно началось."
+      },
+      {
+        before: "So, remember how I",
+        after: " about maybe moving closer to the coast?",
+        options: ["talk", "talked", "have talked", "am talking"],
+        correct: "talked",
+        hint: "Это ссылка на конкретный, уже случившийся разговор в прошлом."
+      },
+      {
+        before: "Well, we",
+        after: " it more seriously now.",
+        options: ["think about", "are thinking about", "thought about", "will think about"],
+        correct: "are thinking about",
+        hint: "Ничего ещё не решено, только растущий интерес прямо сейчас."
+      },
+      {
+        before: "Actually, we",
+        after: " a house this Saturday, the agent already confirmed.",
+        options: ["see", "are seeing", "saw", "are going to see"],
+        correct: "are seeing",
+        hint: "Дело уже согласовано с конкретной датой, агент подтвердил."
+      },
+      {
+        before: "Meanwhile, work",
+        after: " crazy this month.",
+        options: ["is", "has been", "was", "is being"],
+        correct: "has been",
+        hint: "Месяц ещё не закончился, а состояние длится весь этот период."
+      },
+      {
+        before: "I",
+        after: " three deadlines already, and there's still one more waiting.",
+        options: ["met", "have met", "meet", "am meeting"],
+        correct: "have met",
+        hint: "Нет точной даты, зато есть «already» — важен результат к сегодняшнему дню."
+      },
+      {
+        before: "Oh, and funny thing, I",
+        after: " my sister at the market yesterday completely by accident.",
+        options: ["have run into", "ran into", "run into", "am running into"],
+        correct: "ran into",
+        hint: "Есть точная дата — yesterday."
+      },
+      {
+        before: "Anyway, I",
+        after: " call you properly this weekend, once things calm down a bit. Promise.",
+        options: ["am going to", "will", "do", "am calling"],
+        correct: "am going to",
+        hint: "Это уже обдуманное намерение, не решение в последнюю секунду."
+      }
+    ]
+  }
+];
+
+const TOTAL_LEVELS = LEVELS.length;
+let currentLevel = 0;
+let currentTask = 0;
+let correctCount = 0;
+const levelResults = []; // {correct, total} для каждого пройденного уровня
+
+const mainWrap = document.getElementById('mainWrap');
+
+function pluralCorrect(n) {
+  const lastDigit = n % 10, lastTwo = n % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return 'правильных';
+  if (lastDigit === 1) return 'правильный';
+  if (lastDigit >= 2 && lastDigit <= 4) return 'правильных';
+  return 'правильных';
+}
+function pluralAnswers(n) {
+  const lastDigit = n % 10, lastTwo = n % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return 'ответов';
+  if (lastDigit === 1) return 'ответ';
+  if (lastDigit >= 2 && lastDigit <= 4) return 'ответа';
+  return 'ответов';
+}
+
+function buildLevelProgressRow(current, total) {
+  let html = '';
+  for (let i = 1; i <= total; i++) {
+    const filled = i <= current;
+    html += `<div class="level-progress-circle${filled ? ' filled' : ''}">${i}</div>`;
+    if (i < total) html += `<div class="level-progress-line${i < current ? ' filled' : ''}"></div>`;
+  }
+  return html;
+}
+
+function getResultMessage(levelIdx, correct, total) {
+  const lvl = LEVELS[levelIdx];
+  if (correct === total) return `С ${lvl.resultTopic} всё отлично. Дальше — ${lvl.nextTopic}.`;
+  if (correct >= 3) return `С ${lvl.resultTopic} в целом разобрались. Дальше — ${lvl.nextTopic}.`;
+  return `С ${lvl.resultTopic} пока непросто. Дальше — ${lvl.nextTopic}.`;
+}
+
+function updateGlobalBar() {
+  const perLevel = 100 / TOTAL_LEVELS;
+  const levelBase = currentLevel * perLevel;
+  const withinLevel = (currentTask / LEVELS[currentLevel].tasks.length) * perLevel;
+  const pct = Math.round(levelBase + withinLevel);
+  document.getElementById('globalFill').style.width = pct + '%';
+  document.getElementById('globalPct').textContent = pct + '%';
+  document.getElementById('globalLevelLabel').textContent =
+    currentLevel === TOTAL_LEVELS - 1 ? 'Финальный уровень' : `Уровень ${currentLevel + 1} из ${TOTAL_LEVELS}`;
+}
+
+function renderDots(container, total, done, current) {
+  container.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < done ? ' done' : '') + (i === current ? ' current' : '');
+    container.appendChild(d);
+  }
+}
+
+// ===== ОБЫЧНЫЙ УРОВЕНЬ (1-4) =====
+
+function renderRegularLevel(levelIdx) {
+  const lvl = LEVELS[levelIdx];
+  const section = document.createElement('div');
+  section.className = 'level-section';
+  section.id = 'level-section-' + levelIdx;
+  section.innerHTML = `
+    <div class="level-title">${lvl.title}</div>
+    <div class="level-sub"><span class="voice">${lvl.subtitle}</span> <span class="count">· ${lvl.tasks.length} вопросов</span></div>
+    <div class="level-dots" id="levelDots-${levelIdx}"></div>
+    <div id="tasksContainer-${levelIdx}"></div>
+  `;
+  mainWrap.appendChild(section);
+
+  currentTask = 0;
+  renderTask(levelIdx, 0);
+}
+
+function renderTask(levelIdx, taskIdx) {
+  const lvl = LEVELS[levelIdx];
+  const t = lvl.tasks[taskIdx];
+  const container = document.getElementById('tasksContainer-' + levelIdx);
+  const taskEl = document.createElement('div');
+  taskEl.className = 'task';
+  taskEl.id = `task-${levelIdx}-${taskIdx}`;
+
+  const sentenceHtml = `${t.sentence[0]} <span class="gap" id="gap-${levelIdx}-${taskIdx}">___</span> ${t.sentence[1]}`;
+
+  taskEl.innerHTML = `
+    <div class="task-sentence">${sentenceHtml}</div>
+    <div class="options" id="options-${levelIdx}-${taskIdx}">
+      ${t.options.map(opt => `<button class="opt-btn" data-val="${opt}">${opt}</button>`).join('')}
+    </div>
+    <button class="hint-btn" id="hintBtn-${levelIdx}-${taskIdx}">Показать подсказку</button>
+    <div class="hint-text" id="hintText-${levelIdx}-${taskIdx}">${t.hint}</div>
+    <div class="explanation" id="explanation-${levelIdx}-${taskIdx}">${t.explanation}</div>
+  `;
+  container.appendChild(taskEl);
+
+  document.getElementById(`hintBtn-${levelIdx}-${taskIdx}`).addEventListener('click', () => {
+    document.getElementById(`hintText-${levelIdx}-${taskIdx}`).classList.toggle('shown');
+  });
+
+  const optButtons = taskEl.querySelectorAll('.opt-btn');
+  optButtons.forEach(btn => {
+    btn.addEventListener('click', () => handleRegularAnswer(levelIdx, taskIdx, btn, optButtons));
+  });
+
+  renderDots(document.getElementById('levelDots-' + levelIdx), lvl.tasks.length, currentTask, currentTask);
+  updateGlobalBar();
+}
+
+function handleRegularAnswer(levelIdx, taskIdx, btn, allButtons) {
+  const lvl = LEVELS[levelIdx];
+  const t = lvl.tasks[taskIdx];
+  const val = btn.dataset.val;
+  const isCorrect = val === t.correct;
+  t._correctFlag = isCorrect;
+
+  allButtons.forEach(b => {
+    b.classList.add('disabled');
+    if (b !== btn) b.classList.add('dimmed');
+  });
+
+  const gapEl = document.getElementById(`gap-${levelIdx}-${taskIdx}`);
+  gapEl.textContent = val;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    gapEl.classList.add('filled-correct');
+    correctCount++;
+  } else {
+    btn.classList.add('wrong');
+    gapEl.classList.add('filled-wrong');
+    document.getElementById(`explanation-${levelIdx}-${taskIdx}`).classList.add('shown');
+  }
+  document.getElementById(`hintBtn-${levelIdx}-${taskIdx}`).style.display = 'none';
+
+  currentTask++;
+  renderDots(document.getElementById('levelDots-' + levelIdx), lvl.tasks.length, currentTask, currentTask);
+  updateGlobalBar();
+
+  setTimeout(() => {
+    if (currentTask < lvl.tasks.length) {
+      renderTask(levelIdx, currentTask);
+      document.getElementById(`task-${levelIdx}-${currentTask}`).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      showLevelComplete(levelIdx);
+    }
+  }, 500);
+}
+
+// ===== ФИНАЛЬНЫЙ УРОВЕНЬ (БОСС) =====
+
+function renderFinalLevel(levelIdx) {
+  const lvl = LEVELS[levelIdx];
+  const section = document.createElement('div');
+  section.className = 'level-section';
+  section.id = 'level-section-' + levelIdx;
+  section.innerHTML = `
+    <div class="level-title">${lvl.title}</div>
+    <div class="level-sub"><span class="voice">${lvl.subtitle}</span> <span class="count">· ${lvl.tasks.length} вопросов</span></div>
+    <div class="level-dots" id="levelDots-${levelIdx}"></div>
+    <div id="storyContainer-${levelIdx}"></div>
+  `;
+  mainWrap.appendChild(section);
+
+  currentTask = 0;
+  renderStory(levelIdx);
+}
+
+function renderStory(levelIdx) {
+  const lvl = LEVELS[levelIdx];
+  const storyContainer = document.getElementById('storyContainer-' + levelIdx);
+  storyContainer.innerHTML = '';
+
+  if (currentTask > 0) {
+    const storyTextEl = document.createElement('div');
+    storyTextEl.className = 'story-text';
+    let html = '';
+    for (let i = 0; i < currentTask; i++) {
+      const t = lvl.tasks[i];
+      if (t.wasCorrect) {
+        html += `${t.before} <span class="filled-correct">${t.chosenVal}</span>${t.after} `;
+      } else {
+        html += `${t.before} <span class="filled-wrong-strike">${t.chosenVal}</span> <span class="filled-correction">${t.correct}</span>${t.after} `;
+      }
+    }
+    storyTextEl.innerHTML = html;
+    storyContainer.appendChild(storyTextEl);
+  }
+
+  if (currentTask < lvl.tasks.length) {
+    const t = lvl.tasks[currentTask];
+    const taskEl = document.createElement('div');
+    taskEl.className = 'inline-task';
+    taskEl.id = 'inline-task-' + currentTask;
+    taskEl.innerHTML = `
+      <div style="margin-bottom: 12px; font-weight: 400; font-size: 16.5px; line-height: 1.6;">${t.before} <span class="story-blank-placeholder" id="gap-final-${currentTask}">&nbsp;&nbsp;&nbsp;&nbsp;</span>${t.after}</div>
+      <div class="options" id="options-final-${currentTask}">
+        ${t.options.map(opt => `<button class="opt-btn" data-val="${opt}">${opt}</button>`).join('')}
+      </div>
+      <button class="hint-btn" id="hintBtn-final-${currentTask}">Показать подсказку</button>
+      <div class="hint-text" id="hintText-final-${currentTask}">${t.hint}</div>
+    `;
+    storyContainer.appendChild(taskEl);
+
+    document.getElementById('hintBtn-final-' + currentTask).addEventListener('click', () => {
+      document.getElementById('hintText-final-' + currentTask).classList.toggle('shown');
+    });
+
+    const optButtons = taskEl.querySelectorAll('.opt-btn');
+    optButtons.forEach(btn => {
+      btn.addEventListener('click', () => handleFinalAnswer(levelIdx, btn, optButtons));
+    });
+
+    taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  renderDots(document.getElementById('levelDots-' + levelIdx), lvl.tasks.length, currentTask, currentTask);
+  updateGlobalBar();
+}
+
+function handleFinalAnswer(levelIdx, btn, allButtons) {
+  const lvl = LEVELS[levelIdx];
+  const t = lvl.tasks[currentTask];
+  const val = btn.dataset.val;
+  const isCorrect = val === t.correct;
+
+  allButtons.forEach(b => {
+    b.classList.add('disabled');
+    if (b !== btn) b.classList.add('dimmed');
+  });
+
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById('inline-task-' + currentTask).classList.add('answered');
+
+  if (isCorrect) correctCount++;
+  document.getElementById('hintBtn-final-' + currentTask).style.display = 'none';
+
+  t.wasCorrect = isCorrect;
+  t.chosenVal = val;
+
+  setTimeout(() => {
+    currentTask++;
+    if (currentTask < lvl.tasks.length) {
+      renderStory(levelIdx);
+    } else {
+      renderStory(levelIdx);
+      levelResults[levelIdx] = { correct: correctCountForThisLevel(levelIdx), total: lvl.tasks.length };
+      const storyContainer = document.getElementById('storyContainer-' + levelIdx);
+      renderFinalCta(storyContainer);
+    }
+  }, 500);
+}
+
+// ===== ЭКРАН ЗАВЕРШЕНИЯ УРОВНЯ =====
+
+function showLevelComplete(levelIdx) {
+  const lvl = LEVELS[levelIdx];
+  const container = document.getElementById('tasksContainer-' + levelIdx);
+
+  const completeEl = document.createElement('div');
+  completeEl.className = 'level-complete';
+
+  const thisLevelCorrect = correctCountForThisLevel(levelIdx);
+
+  const starsHtml = Array.from({length: thisLevelCorrect}).map(() =>
+    `<svg viewBox="0 0 24 24" fill="#FFD84D" stroke="none"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7-5.4-4.7 7.1-.6z"/></svg>`
+  ).join('');
+
+  completeEl.innerHTML = `
+    <div class="star-row" id="starRow-${levelIdx}">${starsHtml}</div>
+    <div class="score-caption">${thisLevelCorrect} ${pluralCorrect(thisLevelCorrect)} ${pluralAnswers(thisLevelCorrect)} из ${lvl.tasks.length}</div>
+    <div class="level-progress-row">${buildLevelProgressRow(levelIdx + 1, TOTAL_LEVELS)}</div>
+    <div class="level-progress-caption">${levelIdx + 1} из ${TOTAL_LEVELS} уровней пройден</div>
+    <div class="level-complete-sub">${getResultMessage(levelIdx, thisLevelCorrect, lvl.tasks.length)}</div>
+    <button class="next-level-btn" id="nextLevelBtn-${levelIdx}">${levelIdx + 2 === TOTAL_LEVELS ? 'Финальный уровень' : 'Уровень ' + (levelIdx + 2)}</button>
+  `;
+  container.appendChild(completeEl);
+  completeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  setTimeout(() => {
+    const starEls = document.getElementById('starRow-' + levelIdx).querySelectorAll('svg');
+    starEls.forEach((s, i) => setTimeout(() => s.classList.add('pop'), i * 100));
+  }, 300);
+
+  levelResults[levelIdx] = { correct: thisLevelCorrect, total: lvl.tasks.length };
+
+  document.getElementById(`nextLevelBtn-${levelIdx}`).addEventListener('click', () => {
+    currentLevel++;
+    currentTask = 0;
+    startLevel(currentLevel);
+    document.getElementById('level-section-' + currentLevel).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function renderFinalCta(container) {
+  const totalStars = levelResults.reduce((sum, r) => sum + r.correct, 0);
+  const maxStars = levelResults.reduce((sum, r) => sum + r.total, 0);
+  const isPerfect = totalStars === maxStars;
+
+  // находим самый сильный и самый слабый уровень по проценту верных с первой попытки
+  let strongestIdx = 0, weakestIdx = 0;
+  let strongestRatio = -1, weakestRatio = 2;
+  levelResults.forEach((r, i) => {
+    const ratio = r.correct / r.total;
+    if (ratio > strongestRatio) { strongestRatio = ratio; strongestIdx = i; }
+    if (ratio < weakestRatio) { weakestRatio = ratio; weakestIdx = i; }
+  });
+
+  const starsFullRows = Array.from({length: totalStars}).map(() =>
+    `<svg viewBox="0 0 24 24" fill="#FFD84D" stroke="none" width="20" height="20"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.8-6.2 3.8 1.6-7-5.4-4.7 7.1-.6z"/></svg>`
+  ).join('');
+
+  const feedbackHtml = isPerfect
+    ? `<p style="margin-bottom: 10px;">С грамматикой у вас всё отлично.</p>
+       <p>А как с уверенностью в разговоре, получается говорить так же легко, как отвечать на эти вопросы?</p>`
+    : `<p style="margin-bottom: 10px;">Лучше всего вы чувствуете ${LEVELS[strongestIdx].ctaTopic}: здесь почти не было ошибок.</p>
+       <p>Больше всего путаницы вызвала ${LEVELS[weakestIdx].ctaTopicNom}. Стоит закрепить отдельно.</p>`;
+
+  const ctaEl = document.createElement('div');
+  ctaEl.className = 'cta-wrapper';
+  ctaEl.innerHTML = `
+    <div class="final-result-title">Итоговый результат</div>
+    <div class="cta-block">
+      <div class="cta-stars-row">${starsFullRows}</div>
+      <div class="cta-stars-caption">${totalStars} из ${maxStars} звёзд</div>
+      <div class="cta-feedback-card">${feedbackHtml}</div>
+      <div class="cta-invite-card">
+        <div class="cta-invite">Если дошли до конца и хочется двигаться дальше, напишите мне в личку. Расскажу, как проходят занятия, и вместе посмотрим, что будет полезно именно вам.</div>
+        <div style="text-align: center;">
+          <a href="https://t.me/ArtemEnglishLessons" class="cta-btn" target="_blank" rel="noopener">Спросить про занятия</a>
+        </div>
+      </div>
+      <div class="cta-bonus">
+        <div class="cta-bonus-text">За то, что прошли тренажёр до конца, код на скидку 10% на ближайший поток курса. Действует 5 дней.</div>
+        <div style="text-align: center;">
+          <div class="cta-code">ВРЕМЕНА10</div>
+        </div>
+      </div>
+      <a href="https://t.me/BezUchebnika" class="cta-brand" target="_blank" rel="noopener">BezUchebnika</a>
+    </div>
+  `;
+  container.appendChild(ctaEl);
+  ctaEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function correctCountForThisLevel(levelIdx) {
+  return LEVELS[levelIdx].tasks.filter(t => {
+    if (levelIdx === TOTAL_LEVELS - 1) return t.wasCorrect;
+    return t._correctFlag;
+  }).length;
+}
+
+function startLevel(levelIdx) {
+  const lvl = LEVELS[levelIdx];
+  if (lvl.isFinal) {
+    renderFinalLevel(levelIdx);
+  } else {
+    renderRegularLevel(levelIdx);
+  }
+}
+
+startLevel(0);
+</script>
+
+</body>
+</html>
