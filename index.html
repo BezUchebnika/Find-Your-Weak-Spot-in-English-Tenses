@@ -413,39 +413,50 @@
     margin-bottom: 30px;
   }
   .cta-btn:active { transform: scale(0.98); }
-  .cta-bonus {
+  .cta-video {
     border-top: 1px solid #333333;
-    padding-top: 22px;
-    margin-bottom: 26px;
-  }
-  .cta-bonus-text {
-    color: #ffffff;
-    opacity: 0.7;
-    font-size: 13px;
-    line-height: 1.55;
-    margin-bottom: 12px;
+    padding-top: 24px;
+    margin-bottom: 30px;
     text-align: left;
   }
-  .cta-code {
+  .cta-video-text {
+    color: #ffffff;
+    opacity: 0.8;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .cta-btn-outline {
     display: inline-block;
     background: transparent;
     color: #ffffff;
-    font-family: 'Courier New', monospace;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 2px;
-    padding: 10px 22px;
-    border: 1.5px dashed #666666;
-  }
-  .cta-brand {
-    color: #666666;
-    font-size: 11.5px;
-    letter-spacing: 0.5px;
-    font-style: italic;
     text-decoration: none;
-    display: inline-block;
+    border: 1.5px solid #ffffff;
+    padding: 12px 26px;
+    font-size: 14px;
+    font-weight: 600;
   }
-  .cta-brand:active { opacity: 0.6; }
+  .cta-btn-outline:active { transform: scale(0.98); }
+  .cta-channel {
+    border-top: 1px solid #333333;
+    padding-top: 22px;
+    text-align: center;
+  }
+  .cta-channel-text {
+    color: #ffffff;
+    opacity: 0.6;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+  .cta-channel-link {
+    color: #85B7EB;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .cta-channel-link:active { opacity: 0.6; }
 </style>
 </head>
 <body>
@@ -1011,6 +1022,8 @@ function showLevelComplete(levelIdx) {
   });
 }
 
+const YOUTUBE_SCHEME_URL = 'https://youtu.be/pyc2yslEo9Q';
+
 function renderFinalCta(container) {
   const totalStars = levelResults.reduce((sum, r) => sum + r.correct, 0);
   const maxStars = levelResults.reduce((sum, r) => sum + r.total, 0);
@@ -1035,6 +1048,8 @@ function renderFinalCta(container) {
     : `<p style="margin-bottom: 10px;">Лучше всего вы чувствуете ${LEVELS[strongestIdx].ctaTopic}: здесь почти не было ошибок.</p>
        <p>Больше всего путаницы вызвала ${LEVELS[weakestIdx].ctaTopicNom}. Стоит закрепить отдельно.</p>`;
 
+  const videoIntro = `Пока думаете о занятиях, посмотрите полезное видео «СХЕМА, которая исправит ваш английский».`;
+
   const ctaEl = document.createElement('div');
   ctaEl.className = 'cta-wrapper';
   ctaEl.innerHTML = `
@@ -1046,20 +1061,37 @@ function renderFinalCta(container) {
       <div class="cta-invite-card">
         <div class="cta-invite">Если дошли до конца и хочется двигаться дальше, напишите мне в личку. Расскажу, как проходят занятия, и вместе посмотрим, что будет полезно именно вам.</div>
         <div style="text-align: center;">
-          <a href="https://t.me/ArtemEnglishLessons" class="cta-btn" target="_blank" rel="noopener">Спросить про занятия</a>
+          <a href="https://t.me/ArtemEnglishLessons" class="cta-btn" data-gc="final-zanyatiya" target="_blank" rel="noopener">Спросить про занятия</a>
         </div>
       </div>
-      <div class="cta-bonus">
-        <div class="cta-bonus-text">За то, что прошли чек-ап до конца, код на скидку 10% на ближайший поток курса. Действует 5 дней.</div>
+      <div class="cta-video">
+        <div class="cta-video-text">${videoIntro}</div>
         <div style="text-align: center;">
-          <div class="cta-code">ВРЕМЕНА10</div>
+          <a href="${YOUTUBE_SCHEME_URL}" class="cta-btn-outline" data-gc="final-video-skhema" target="_blank" rel="noopener">Смотреть видео на YouTube</a>
         </div>
       </div>
-      <a href="https://t.me/BezUchebnika" class="cta-brand" target="_blank" rel="noopener">BezUchebnika</a>
+      <div class="cta-channel">
+        <div class="cta-channel-text">Новые чекапы и тренажёры по английскому выкладываю в телеграм-канале</div>
+        <a href="https://t.me/BezUchebnika" class="cta-channel-link" data-gc="final-telegram-kanal" target="_blank" rel="noopener">Телеграм-канал BezUchebnika</a>
+      </div>
     </div>
   `;
   container.appendChild(ctaEl);
   ctaEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  gcEvent('chekap-proyden');
+  ctaEl.querySelectorAll('[data-gc]').forEach(el => {
+    el.addEventListener('click', () => gcEvent(el.dataset.gc));
+  });
+}
+
+// статистика GoatCounter: события «чекап пройден» и нажатия на кнопки финала
+function gcEvent(name) {
+  try {
+    if (window.goatcounter && window.goatcounter.count) {
+      window.goatcounter.count({ path: name, title: name, event: true });
+    }
+  } catch (e) {}
 }
 
 function correctCountForThisLevel(levelIdx) {
@@ -1081,5 +1113,7 @@ function startLevel(levelIdx) {
 startLevel(0);
 </script>
 
+<script data-goatcounter="https://bezuchebnika.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
