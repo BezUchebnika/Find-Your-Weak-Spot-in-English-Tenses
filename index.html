@@ -413,6 +413,29 @@
     margin-bottom: 30px;
   }
   .cta-btn:active { transform: scale(0.98); }
+  .intro {
+    margin: 18px 0 6px;
+    padding: 18px 16px;
+    background: #111111;
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .intro-accent {
+    background: #85B7EB;
+    color: #111111;
+    font-weight: 700;
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
+  .cta-btn-note {
+    color: #ffffff;
+    opacity: 0.5;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: -18px 0 30px;
+    text-align: center;
+  }
   .cta-video {
     border-top: 1px solid #333333;
     padding-top: 24px;
@@ -843,6 +866,7 @@ function handleRegularAnswer(levelIdx, taskIdx, btn, allButtons) {
   const val = btn.dataset.val;
   const isCorrect = val === t.correct;
   t._correctFlag = isCorrect;
+  t._chosen = val;
 
   allButtons.forEach(b => {
     b.classList.add('disabled');
@@ -1048,7 +1072,10 @@ function renderFinalCta(container) {
     : `<p style="margin-bottom: 10px;">Лучше всего вы чувствуете ${LEVELS[strongestIdx].ctaTopic}: здесь почти не было ошибок.</p>
        <p>Больше всего путаницы вызвала ${LEVELS[weakestIdx].ctaTopicNom}. Стоит закрепить отдельно.</p>`;
 
-  const videoIntro = `Пока думаете о занятиях, посмотрите полезное видео «СХЕМА, которая исправит ваш английский».`;
+  const videoIntro = `Пока ждёте разбор, посмотрите полезное видео «СХЕМА, которая исправит ваш английский».`;
+
+  const razborText = buildRazborMessage(totalStars, maxStars);
+  const razborUrl = 'https://t.me/ArtemEnglishLessons?text=' + encodeURIComponent(razborText);
 
   const ctaEl = document.createElement('div');
   ctaEl.className = 'cta-wrapper';
@@ -1059,10 +1086,11 @@ function renderFinalCta(container) {
       <div class="cta-stars-caption">${totalStars} из ${maxStars} звёзд</div>
       <div class="cta-feedback-card">${feedbackHtml}</div>
       <div class="cta-invite-card">
-        <div class="cta-invite">Если дошли до конца и хочется двигаться дальше, напишите мне в личку. Расскажу, как проходят занятия, и вместе посмотрим, что будет полезно именно вам.</div>
+        <div class="cta-invite">Хотите понять, с чего начать именно вам? Отправьте мне результат чекапа, я посмотрю ваши ответы и дам личные рекомендации.</div>
         <div style="text-align: center;">
-          <a href="https://t.me/ArtemEnglishLessons" class="cta-btn" data-gc="final-zanyatiya" target="_blank" rel="noopener">Спросить про занятия</a>
+          <a href="${razborUrl}" class="cta-btn" id="razborBtn" data-gc="final-razbor" target="_blank" rel="noopener">Получить разбор от Артёма</a>
         </div>
+        <div class="cta-btn-note">Откроется чат со мной в Telegram, сообщение с результатом уже будет написано. Если его там нет, просто вставьте: текст скопирован.</div>
       </div>
       <div class="cta-video">
         <div class="cta-video-text">${videoIntro}</div>
@@ -1080,9 +1108,38 @@ function renderFinalCta(container) {
   ctaEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   gcEvent('chekap-proyden');
+  document.getElementById('razborBtn').addEventListener('click', () => {
+    try { navigator.clipboard.writeText(razborText); } catch (e) {}
+  });
   ctaEl.querySelectorAll('[data-gc]').forEach(el => {
     el.addEventListener('click', () => gcEvent(el.dataset.gc));
   });
+}
+
+// сообщение Артёму: итог, затем по каждому уровню счёт и ответы, которые не совпали
+// даже если ошибки во всех 28 вопросах, сообщение около 3700 символов и влезает в лимит Telegram (4096)
+function buildRazborMessage(totalStars, maxStars) {
+  let msg = `Здравствуйте, Артём! Мой результат в чекапе по временам: ${totalStars} ${pluralCorrect(totalStars)} ${pluralAnswers(totalStars)} из ${maxStars}.`;
+  if (totalStars === maxStars) {
+    msg += '\nХочу получить ваши рекомендации, что делать дальше.';
+    return msg;
+  }
+  LEVELS.forEach((lvl, li) => {
+    const misses = [];
+    lvl.tasks.forEach(t => {
+      if (lvl.isFinal) {
+        if (t.wasCorrect === false) misses.push(`${t.before} ___${t.after} Мой ответ: ${t.chosenVal}. Правильно: ${t.correct}`);
+      } else if (t._correctFlag === false) {
+        misses.push(`${t.sentence[0]} ___${t.sentence[1]} Мой ответ: ${t._chosen}. Правильно: ${t.correct}`);
+      }
+    });
+    const total = lvl.tasks.length;
+    const ok = total - misses.length;
+    msg += `\n\n${lvl.subtitle}: правильно ${ok} из ${total}`;
+    if (misses.length) msg += '\n' + misses.map(m => '• ' + m).join('\n');
+  });
+  msg += '\n\nХочу получить ваш разбор.';
+  return msg;
 }
 
 // статистика GoatCounter: события «чекап пройден» и нажатия на кнопки финала
@@ -1109,6 +1166,11 @@ function startLevel(levelIdx) {
     renderRegularLevel(levelIdx);
   }
 }
+
+const introEl = document.createElement('div');
+introEl.className = 'intro';
+introEl.innerHTML = 'Пройдите 5 уровней, это займёт 5–10 минут. В конце узнаете свои сильные и слабые стороны и сможете получить от меня <span class="intro-accent">персональный разбор</span>';
+mainWrap.appendChild(introEl);
 
 startLevel(0);
 </script>
